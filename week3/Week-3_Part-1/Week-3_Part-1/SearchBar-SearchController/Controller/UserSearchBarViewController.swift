@@ -1,9 +1,3 @@
-//
-//  UserSearchBarViewController.swift
-//  Week-3_Part-1
-//
-//  Created by Kerim Caglar on 1.05.2021.
-//
 
 import UIKit
 
@@ -12,6 +6,9 @@ class UserSearchBarViewController: UIViewController {
     var users = [User]()
     var filteredUsers = [User]()
     var isFiltering: Bool = false
+    var errorMsg : String = "No match !"
+    var error : Bool = false
+    var result: Bool = true
     @IBOutlet weak var tableView: UITableView!
     
     override func viewDidLoad() {
@@ -35,23 +32,37 @@ extension UserSearchBarViewController: UITableViewDataSource {
         
         if isFiltering {
             return filteredUsers.count
+        } else if (result == false){
+            return 1
+        }else{
+            return users.count
         }
-        
-        return users.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "userCell")
+        let cellErr = tableView.dequeueReusableCell(withIdentifier: "errCell")
         let user:User
-        if isFiltering {
+        if isFiltering  {
             user = filteredUsers[indexPath.row]
-        } else {
+            cell?.textLabel?.text = user.name
+            cell?.detailTextLabel?.text = user.company.name
+            
+            if !result{ //bu if'in icine bir turlu giremiyor, goremedigim seyi gorebilirseniz nolur HELP :)
+                cellErr?.textLabel?.text = "Error"
+                return cellErr!
+            }
+            return cell!
+        } else if !isFiltering {
             user = users[indexPath.row]
+            cell?.textLabel?.text = user.name
+            cell?.detailTextLabel?.text = user.company.name
+            return cell!
+        } else {
+            
+            return cellErr!
         }
-        cell?.textLabel?.text = user.name
-        cell?.detailTextLabel?.text = user.company.name
-        
-        return cell!
+       
     }
     
     //MARK:  cell için custom bir cell tanımlayınız. Veri bulunamadığında ÖZEL bir mesaj gösteriniz.
@@ -63,6 +74,18 @@ extension UserSearchBarViewController: UISearchBarDelegate {
         filteredUsers = users.filter({ (user:User) -> Bool in
             return user.name.lowercased().contains(searchText.lowercased())
         })
+        
+        var temp = [Bool]()
+        for user in users{
+            temp.append(user.name.lowercased().contains(searchText.lowercased()))
+            
+        }
+        
+        let groundTruth = temp.map {(b: Bool) -> Bool in return b || b}
+        
+       
+        result = temp.reduce(false, {$0 || $1})
+        print(result)
         
         isFiltering = true
         tableView.reloadData()
